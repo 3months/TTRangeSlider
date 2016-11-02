@@ -343,12 +343,13 @@ static const CGFloat kLabelsFontSize = 12.0f;
             break;
     }
     
+    //If we want a double line lets call this function again with a small offset
     if (lineStyle == Double) {
-        [self addLineToVerticalSlider:layer withStyle:Solid withYPos:yPos+3];
+        [self addLineToHorizontalSlider:layer withStyle:Solid withXPos:yPos+3 withPath:path];
+    } else {
+        [layer setPath:path];
+        CGPathRelease(path);
     }
-    
-    [layer setPath:path];
-    CGPathRelease(path);
 }
 
 - (void)updateHandlePositions {
@@ -360,20 +361,22 @@ static const CGFloat kLabelsFontSize = 12.0f;
     float xPosMin = [self getXPositionAlongLineForValue:self.selectedMinimum];
     CGPoint leftHandleCenter = CGPointMake(xPosMin, CGRectGetMidY(self.sliderLine.frame));
     self.leftHandle.position = leftHandleCenter;
-    [self addLineToHorizontalSlider:self.leftHandleLine withStyle:self.lineStyleLeft withXPos:xPosMin];
+    [self addLineToHorizontalSlider:self.leftHandleLine withStyle:self.lineStyleLeft withXPos:xPosMin withPath:nil];
 
     float xPosMax = [self getYPositionAlongLineForValue:self.selectedMaximum];
     CGPoint rightHandleCenter = CGPointMake(xPosMax, CGRectGetMidY(self.sliderLine.frame));
     self.rightHandle.position = rightHandleCenter;
-    [self addLineToHorizontalSlider:self.rightHandleLine withStyle:self.lineStyleRight withXPos:xPosMax];
+    [self addLineToHorizontalSlider:self.rightHandleLine withStyle:self.lineStyleRight withXPos:xPosMax withPath:nil];
     
     //positioning for the dist slider line
     self.sliderLineBetweenHandles.frame = CGRectMake(self.leftHandle.position.x, self.sliderLine.frame.origin.y, self.rightHandle.position.x-self.leftHandle.position.x, self.lineHeight);
 }
 
-- (void)addLineToHorizontalSlider:(CAShapeLayer*) layer withStyle:(LineStyle) lineStyle withXPos:(float)xPos {
+- (void)addLineToHorizontalSlider:(CAShapeLayer*) layer withStyle:(LineStyle) lineStyle withXPos:(float)xPos withPath:(CGMutablePathRef) path{
     // Setup the path
-    CGMutablePathRef path = CGPathCreateMutable();
+    if(path == nil) {
+        path = CGPathCreateMutable();
+    }
     
     float lineHeight = self.leftHandleLine.frame.size.height;
     float thumbHalfWidth = self.handleDiameter / 2.0;
@@ -393,12 +396,13 @@ static const CGFloat kLabelsFontSize = 12.0f;
             break;
     }
     
+    //If we want a double line lets call this function again with a small offset
     if (lineStyle == Double) {
-        [self addLineToHorizontalSlider:layer withStyle:Solid withXPos:xPos+3];
+        [self addLineToHorizontalSlider:layer withStyle:Solid withXPos:xPos+3 withPath:path];
+    } else {
+        [layer setPath:path];
+        CGPathRelease(path);
     }
-    
-    [layer setPath:path];
-    CGPathRelease(path);
 }
 
 - (float)findHandleLineAlignment:(CGRect)frame {
