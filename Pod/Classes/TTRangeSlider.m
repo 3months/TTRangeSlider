@@ -311,19 +311,21 @@ static const CGFloat kLabelsFontSize = 12.0f;
 - (void)updateVerticalHandlePositions {
     float yPosMin = [self getYPositionAlongLineForValue:self.selectedMinimum];
     self.leftHandle.position = CGPointMake(CGRectGetMidX(self.sliderLine.frame), yPosMin);
-    [self addLineToVerticalSlider:self.leftHandleLine withStyle:self.lineStyleLeft withYPos:yPosMin];
+    [self addLineToVerticalSlider:self.leftHandleLine withStyle:self.lineStyleLeft withYPos:yPosMin withPath:nil];
     
     float yPosMax = [self getYPositionAlongLineForValue:self.selectedMaximum];
     self.rightHandle.position = CGPointMake(CGRectGetMidX(self.sliderLine.frame), yPosMax);
-    [self addLineToVerticalSlider:self.rightHandleLine withStyle:self.lineStyleRight withYPos:yPosMax];
+    [self addLineToVerticalSlider:self.rightHandleLine withStyle:self.lineStyleRight withYPos:yPosMax withPath:nil];
     
     //positioning for the dist slider line
     self.sliderLineBetweenHandles.frame = CGRectMake(self.sliderLine.frame.origin.x, self.leftHandle.position.y, self.lineHeight, self.rightHandle.position.y-self.leftHandle.position.y);
 }
 
-- (void)addLineToVerticalSlider:(CAShapeLayer*) layer withStyle:(LineStyle) lineStyle withYPos:(float)yPos{
+- (void)addLineToVerticalSlider:(CAShapeLayer*) layer withStyle:(LineStyle) lineStyle withYPos:(float)yPos withPath:(CGMutablePathRef) path{
     // Setup the path
-    CGMutablePathRef path = CGPathCreateMutable();
+    if(path == nil) {
+        path = CGPathCreateMutable();
+    }
     
     float lineWidth = self.leftHandleLine.frame.size.width;
     float thumbHalfWidth = self.handleDiameter / 2.0;
@@ -345,7 +347,7 @@ static const CGFloat kLabelsFontSize = 12.0f;
     
     //If we want a double line lets call this function again with a small offset
     if (lineStyle == Double) {
-        [self addLineToHorizontalSlider:layer withStyle:Solid withXPos:yPos+3 withPath:path];
+        [self addLineToVerticalSlider:layer withStyle:Solid withYPos:yPos+3 withPath:path];
     } else {
         [layer setPath:path];
         CGPathRelease(path);
