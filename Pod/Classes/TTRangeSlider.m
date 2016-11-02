@@ -140,7 +140,6 @@ static const CGFloat kLabelsFontSize = 12.0f;
         CGPoint lineLeftSide = CGPointMake(barSidePadding, alignment);
         CGPoint lineRightSide = CGPointMake(currentFrame.size.width-barSidePadding, alignment);
         self.sliderLine.frame = CGRectMake(lineLeftSide.x, lineLeftSide.y, lineRightSide.x-lineLeftSide.x, self.lineHeight);
-        self.sliderLine.frame = CGRectMake(lineLeftSide.x, lineLeftSide.y, self.lineHeight, lineRightSide.y-lineLeftSide.y);
     }
     
     self.sliderLine.cornerRadius = self.lineHeight / 2.0;
