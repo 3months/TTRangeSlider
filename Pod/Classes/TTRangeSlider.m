@@ -8,6 +8,7 @@
 const int HANDLE_TOUCH_AREA_EXPANSION = -30; //expand the touch area of the handle by this much (negative values increase size) so that you don't have to touch right on the handle to activate it.
 const float TEXT_HEIGHT = 14;
 
+
 @interface TTRangeSlider ()
 
 @property (nonatomic, strong) CALayer *sliderLine;
@@ -15,8 +16,11 @@ const float TEXT_HEIGHT = 14;
 
 //If the Range bar is vertical left = lower
 @property (nonatomic, strong) CALayer *leftHandle;
+@property (nonatomic, strong) CAShapeLayer *leftHandleLine;
 @property (nonatomic, assign) BOOL leftHandleSelected;
+
 @property (nonatomic, strong) CALayer *rightHandle;
+@property (nonatomic, strong) CAShapeLayer *rightHandleLine;
 @property (nonatomic, assign) BOOL rightHandleSelected;
 
 @property (nonatomic, strong) CATextLayer *minLabel;
@@ -58,12 +62,13 @@ static const CGFloat kLabelsFontSize = 12.0f;
     _selectedHandleDiameterMultiplier = 1.7;
     
     _lineHeight = 1.0;
+    _lineStyleHeight = 0.0;
     
     _handleBorderWidth = 0.0;
     _handleBorderColor = self.tintColor;
     
     _labelPadding = 8.0;
-    
+
     //draw the slider line
     self.sliderLine = [CALayer layer];
     self.sliderLine.backgroundColor = self.tintColor.CGColor;
@@ -89,10 +94,20 @@ static const CGFloat kLabelsFontSize = 12.0f;
     self.rightHandle.borderWidth = self.handleBorderWidth;
     self.rightHandle.borderColor = self.handleBorderColor.CGColor;
     [self.layer addSublayer:self.rightHandle];
-
+    
     self.leftHandle.frame = CGRectMake(0, 0, self.handleDiameter, self.handleDiameter);
     self.rightHandle.frame = CGRectMake(0, 0, self.handleDiameter, self.handleDiameter);
 
+    //draw the minimum slider handle line (if needed)
+    self.leftHandleLine = [CAShapeLayer layer];
+    [self.leftHandleLine setStrokeColor:self.tintColor.CGColor];
+    [self.layer addSublayer:self.leftHandleLine];
+
+    //draw the minimum slider handle line (if needed)
+    self.rightHandleLine = [CAShapeLayer layer];
+    [self.rightHandleLine setStrokeColor:self.tintColor.CGColor];
+    [self.layer addSublayer:self.rightHandleLine];
+    
     //draw the text labels
     self.minLabel = [[CATextLayer alloc] init];
     self.minLabel.alignmentMode = kCAAlignmentCenter;
@@ -120,14 +135,17 @@ static const CGFloat kLabelsFontSize = 12.0f;
     }
     self.maxLabelFont = [UIFont systemFontOfSize:kLabelsFontSize];
     [self.layer addSublayer:self.maxLabel];
-
+    
     [self refresh];
 }
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-
-    //positioning for the slider line
+    //If we have already set up our view there's nothing left to do here
+    if(self.sliderLine.frame.size.height > 0 && self.sliderLine.frame.size.width > 0) {
+        return;
+    }
+    
     float barSidePadding = 16.0f;
     CGRect currentFrame = self.frame;
     if(self.verticalBar) {
@@ -135,11 +153,32 @@ static const CGFloat kLabelsFontSize = 12.0f;
         CGPoint lineLeftSide = CGPointMake(alignment, barSidePadding);
         CGPoint lineRightSide = CGPointMake(alignment, currentFrame.size.height-barSidePadding);
         self.sliderLine.frame = CGRectMake(lineLeftSide.x, lineLeftSide.y, self.lineHeight, lineRightSide.y-lineLeftSide.y);
+        
+        if(self.lineStyleLeft != None) {
+            self.leftHandleLine.frame = CGRectMake(0, 0, currentFrame.size.width, self.lineStyleHeight);
+            [self.leftHandleLine setLineWidth:self.lineStyleHeight];
+            
+            if(self.lineStyleLeft == Dashed) {
+                [self.leftHandleLine setLineDashPattern:@[@(10), @(5)]];
+            }
+        }
+        
+        if(self.lineStyleRight != None) {
+            self.rightHandleLine.frame = CGRectMake(0, 0, currentFrame.size.width, self.lineStyleHeight);
+            [self.rightHandleLine setLineWidth:self.lineStyleHeight];
+            
+            if(self.lineStyleRight == Dashed) {
+                [self.rightHandleLine setLineDashPattern:@[@(10), @(5)]];
+            }
+        }
+        
     } else {
         float alignment = [self findHandleAlignment:currentFrame.size.height usingPadding:barSidePadding];
         CGPoint lineLeftSide = CGPointMake(barSidePadding, alignment);
         CGPoint lineRightSide = CGPointMake(currentFrame.size.width-barSidePadding, alignment);
         self.sliderLine.frame = CGRectMake(lineLeftSide.x, lineLeftSide.y, lineRightSide.x-lineLeftSide.x, self.lineHeight);
+        self.leftHandleLine.frame = CGRectMake(0, 0, self.lineStyleHeight, currentFrame.size.height);
+        self.rightHandleLine.frame = CGRectMake(0, 0, self.lineStyleHeight, currentFrame.size.height);
     }
     
     self.sliderLine.cornerRadius = self.lineHeight / 2.0;
@@ -277,14 +316,60 @@ static const CGFloat kLabelsFontSize = 12.0f;
     CGPoint leftHandleCenter = CGPointMake(CGRectGetMidX(self.sliderLine.frame), [self getYPositionAlongLineForValue:self.selectedMinimum]);
     self.leftHandle.position = leftHandleCenter;
     self.leftHandle.zPosition = 1;
+    [self addLine:self.selectedMinimum for:self.leftHandleLine withStyle:self.lineStyleLeft];
     
     CGPoint rightHandleCenter = CGPointMake(CGRectGetMidX(self.sliderLine.frame), [self getYPositionAlongLineForValue:self.selectedMaximum]);
     self.rightHandle.position = rightHandleCenter;
     self.rightHandle.zPosition = 1;
+    [self addLine:self.selectedMaximum for:self.rightHandleLine withStyle:self.lineStyleRight];
     
     //positioning for the dist slider line
     self.sliderLineBetweenHandles.frame = CGRectMake(self.sliderLine.frame.origin.x, self.leftHandle.position.y, self.lineHeight, self.rightHandle.position.y-self.leftHandle.position.y);
 }
+
+- (void)addLine:(float) value for:(CAShapeLayer*) layer withStyle:(int) lineStyle{
+    // Setup the path
+    CGMutablePathRef path = CGPathCreateMutable();
+    
+    CGFloat midPoint = CGRectGetMidX(self.sliderLine.frame);
+    float lineWidth = self.leftHandleLine.frame.size.width;
+    float thumbHalfWidth = self.handleDiameter / 2.0;
+
+    float yPos = [self getYPositionAlongLineForValue:value];
+    switch (self.alignment) {
+        case Left: //Left / Top
+            if (lineStyle == Double) { //Double line
+                CGPathMoveToPoint(path, NULL, thumbHalfWidth, yPos + 3);
+                CGPathAddLineToPoint(path, NULL, lineWidth, yPos + 3);
+            }
+            
+            CGPathMoveToPoint(path, NULL, thumbHalfWidth, yPos);
+            CGPathAddLineToPoint(path, NULL, lineWidth, yPos);
+            break;
+        case Right: //Right / Bottom
+            if (lineStyle == Double) { //Double line
+                CGPathMoveToPoint(path, NULL, 0, yPos + 3);
+                CGPathAddLineToPoint(path, NULL, lineWidth - thumbHalfWidth, yPos + 3);
+            }
+            
+            CGPathMoveToPoint(path, NULL, 0, yPos);
+            CGPathAddLineToPoint(path, NULL, lineWidth - thumbHalfWidth, yPos);
+            break;
+        default:
+            if (lineStyle == Double) { //Double line
+                CGPathMoveToPoint(path, NULL, 0, yPos + 3);
+                CGPathAddLineToPoint(path, NULL, midPoint, yPos + 3);
+            }
+            
+            CGPathMoveToPoint(path, NULL, 0, yPos);
+            CGPathAddLineToPoint(path, NULL, midPoint, yPos);
+            break;
+    }
+    
+    [layer setPath:path];
+    CGPathRelease(path);
+}
+
 - (void)updateHandlePositions {
     if (_verticalBar) {
         [self updateVerticalHandlePositions];
@@ -293,12 +378,27 @@ static const CGFloat kLabelsFontSize = 12.0f;
     
     CGPoint leftHandleCenter = CGPointMake([self getXPositionAlongLineForValue:self.selectedMinimum], CGRectGetMidY(self.sliderLine.frame));
     self.leftHandle.position = leftHandleCenter;
+    self.leftHandleLine.position = leftHandleCenter;
 
     CGPoint rightHandleCenter = CGPointMake([self getXPositionAlongLineForValue:self.selectedMaximum], CGRectGetMidY(self.sliderLine.frame));
     self.rightHandle.position= rightHandleCenter;
+    self.rightHandleLine.position = rightHandleCenter;
     
     //positioning for the dist slider line
     self.sliderLineBetweenHandles.frame = CGRectMake(self.leftHandle.position.x, self.sliderLine.frame.origin.y, self.rightHandle.position.x-self.leftHandle.position.x, self.lineHeight);
+}
+
+- (float)findHandleLineAlignment:(CGRect)frame {
+    switch (self.alignment) {
+        case Left: //Left / Top
+            return CGRectGetMinX(frame);
+        case Center: //Center
+            return CGRectGetMidX(frame);
+        case Right: //Right / Bottom
+            return CGRectGetMaxX(frame);
+        default:
+            return CGRectGetMidX(frame);
+    }
 }
 
 - (void)updateLabelPositions {
@@ -329,8 +429,10 @@ static const CGFloat kLabelsFontSize = 12.0f;
     }
     else {
         float increaseAmount = minSpacingBetweenLabels - newSpacingBetweenTextLabels;
+
         newMinLabelCenter = CGPointMake(newMinLabelCenter.x - increaseAmount/2, newMinLabelCenter.y);
         newMaxLabelCenter = CGPointMake(newMaxLabelCenter.x + increaseAmount/2, newMaxLabelCenter.y);
+
         self.minLabel.position = newMinLabelCenter;
         self.maxLabel.position = newMaxLabelCenter;
 
@@ -358,11 +460,10 @@ static const CGFloat kLabelsFontSize = 12.0f;
             self.leftHandleSelected = YES;
             [self animateHandle:self.leftHandle withSelection:YES];
         } else {
-            if (self.selectedMaximum == self.maxValue && [self getCentreOfRect:self.leftHandle.frame].x == [self getCentreOfRect:self.rightHandle.frame].x) {
+            if (self.selectedMaximum == self.maxValue && distanceFromLeftHandle == distanceFromRightHandle) {
                 self.leftHandleSelected = YES;
                 [self animateHandle:self.leftHandle withSelection:YES];
-            }
-            else {
+            }else {
                 self.rightHandleSelected = YES;
                 [self animateHandle:self.rightHandle withSelection:YES];
             }
@@ -677,6 +778,18 @@ static const CGFloat kLabelsFontSize = 12.0f;
 
 -(void)setVerticalBar:(BOOL)verticalBar {
     _verticalBar = verticalBar;
+}
+
+-(void)setLineStyleHeight:(CGFloat)lineStyleHeight {
+    _lineStyleHeight = lineStyleHeight;
+}
+
+-(void)setLineStyleLeft:(NSInteger)lineStyleLeft {
+    _lineStyleLeft = lineStyleLeft;
+}
+
+-(void)setLineStyleRight:(NSInteger)lineStyleRight {
+    _lineStyleRight = lineStyleRight;
 }
 
 @end

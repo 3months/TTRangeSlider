@@ -16,6 +16,13 @@ typedef enum {
     Right = 2
 } Alignment;
 
+typedef enum {
+    None = -1,
+    Solid = 0,
+    Dashed = 1,
+    Double = 2
+} LineStyle;
+
 @property (nonatomic, weak) IBOutlet id<TTRangeSliderDelegate> delegate;
 
 /**
@@ -109,6 +116,11 @@ typedef enum {
 @property (nonatomic, assign) IBInspectable CGFloat lineHeight;
 
 /**
+ *Set the handle line height (default 1.0)
+ */
+@property (nonatomic, assign) IBInspectable CGFloat lineStyleHeight;
+
+/**
  *Sets the alignment of the bar
  *Unfortuantely enums can't be used as IBInspectable, so I guess we'll have to use Ints
  * 0 = Left / Top
@@ -116,6 +128,32 @@ typedef enum {
  * 2 = Right / Bottom
  */
 @property (nonatomic, assign) IBInspectable NSInteger alignment;
+
+/**
+ *Sets the alignment of the bar
+ *Unfortuantely enums can't be used as IBInspectable, so I guess we'll have to use Ints
+ * -1 = No Line (Default)
+ *  0 = Solid
+ *  1 = Dashed
+ *  2 = Double
+ */
+@property (nonatomic, assign) IBInspectable NSInteger lineStyleLeft;
+
+/**
+ *Sets the alignment of the bar
+ *Unfortuantely enums can't be used as IBInspectable, so I guess we'll have to use Ints
+ * -1 = No Line (Default)
+ *  0 = Solid
+ *  1 = Dashed
+ *  2 = Double
+ */
+@property (nonatomic, assign) IBInspectable NSInteger lineStyleRight;
+
+/**
+ *Handle diameter (default 16.0)
+ */
+@property (nonatomic, assign) IBInspectable CGFloat handleDiameter;
+
 /**
  *Handle slider with custom image, you can set custom image for your handle
  */
@@ -135,11 +173,6 @@ typedef enum {
  *Handle border width (default 0.0)
  */
 @property (nonatomic, assign) CGFloat handleBorderWidth;
-
-/**
- *Handle diameter (default 16.0)
- */
-@property (nonatomic, assign) CGFloat handleDiameter;
 
 /**
  *Selected handle diameter multiplier (default 1.7)
