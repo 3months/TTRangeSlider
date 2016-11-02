@@ -130,10 +130,6 @@ static const CGFloat kLabelsFontSize = 12.0f;
     //positioning for the slider line
     float barSidePadding = 16.0f;
     CGRect currentFrame = self.frame;
-    float yMiddle = currentFrame.size.height/2.0;
-    CGPoint lineLeftSide = CGPointMake(barSidePadding, yMiddle);
-    CGPoint lineRightSide = CGPointMake(currentFrame.size.width-barSidePadding, yMiddle);
-    self.sliderLine.frame = CGRectMake(lineLeftSide.x, lineLeftSide.y, lineRightSide.x-lineLeftSide.x, self.lineHeight);
     if(self.verticalBar) {
         float alignment = [self findHandleAlignment:currentFrame.size.width usingPadding:barSidePadding];
         CGPoint lineLeftSide = CGPointMake(alignment, barSidePadding);
@@ -145,8 +141,6 @@ static const CGFloat kLabelsFontSize = 12.0f;
         CGPoint lineRightSide = CGPointMake(currentFrame.size.width-barSidePadding, alignment);
         self.sliderLine.frame = CGRectMake(lineLeftSide.x, lineLeftSide.y, lineRightSide.x-lineLeftSide.x, self.lineHeight);
         self.sliderLine.frame = CGRectMake(lineLeftSide.x, lineLeftSide.y, self.lineHeight, lineRightSide.y-lineLeftSide.y);
-        self.leftHandleLine.frame = CGRectMake(0, 0, self.lineStyleHeight, currentFrame.size.height);
-        self.rightHandleLine.frame = CGRectMake(0, 0, self.lineStyleHeight, currentFrame.size.height);
     }
     
     self.sliderLine.cornerRadius = self.lineHeight / 2.0;
